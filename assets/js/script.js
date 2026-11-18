@@ -126,3 +126,9 @@ function bukaDetail(tr){
   openModal('modal-detail');
 }
 document.addEventListener('DOMContentLoaded',filterTabel);
+
+/* Buka jendela kartu dari hash (#m-profil dst.), dipakai operator setelah simpan/hapus konten */
+document.addEventListener('DOMContentLoaded',function(){
+  var h=location.hash;
+  if(h.indexOf('#m-')===0){openModal('info-'+h.slice(3).replace(/[^a-z0-9_-]/gi,''));}
+});

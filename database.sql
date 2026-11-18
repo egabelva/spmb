@@ -3,7 +3,7 @@
 -- Cara pakai: phpMyAdmin -> tab Import -> pilih file ini -> Go.
 -- PERINGATAN: file ini MENGHAPUS database db_spmb_gunungmadu yang lama
 -- (jika ada) lalu membuatnya kembali dari nol beserta data contoh.
--- Total: 30 tabel + 1 view (v_pendaftar).
+-- Total: 31 tabel + 1 view (v_pendaftar).
 -- ============================================================
 DROP DATABASE IF EXISTS db_spmb_gunungmadu;
 CREATE DATABASE db_spmb_gunungmadu CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -128,7 +128,7 @@ CREATE TABLE riwayat_status (
 ) ENGINE=InnoDB;
 
 -- ============================================================
--- C. PENGATURAN (2 tabel, satu baris tiap tabel: id = 1)
+-- C. PENGATURAN & IDENTITAS (3 tabel, satu baris tiap tabel: id = 1)
 -- ============================================================
 CREATE TABLE pengaturan_ppdb (
   id TINYINT UNSIGNED NOT NULL DEFAULT 1,
@@ -147,6 +147,14 @@ CREATE TABLE kontak_sekolah (
   email VARCHAR(100) NOT NULL DEFAULT '',
   wa VARCHAR(25) NOT NULL DEFAULT '',
   maps_embed VARCHAR(1000) NOT NULL DEFAULT '',
+  diubah TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB;
+
+CREATE TABLE logo_sekolah (
+  id TINYINT UNSIGNED NOT NULL DEFAULT 1,
+  logo_tipe VARCHAR(100) NOT NULL,
+  logo MEDIUMBLOB NOT NULL,
   diubah TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB;
