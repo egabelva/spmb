@@ -1,0 +1,64 @@
+/* Pola latar "tebu" + gaya global SPMB SMA Gunung Madu */
+html{scroll-behavior:smooth}
+.bg-tebu{background-color:#F3F4F6;background-image:radial-gradient(#d1d5db 1.2px,transparent 1.2px);background-size:22px 22px}
+.dark .bg-tebu{background-color:#111827;background-image:radial-gradient(#374151 1.2px,transparent 1.2px)}
+.card{background:#fff;border-radius:1.5rem;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+.dark .card{background:#1f2937;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+.inp{width:100%;border:2px solid #e5e7eb;border-radius:9999px;padding:.65rem 1.1rem;background:#fff;color:#111827;outline:none;transition:.15s}
+.inp:focus{border-color:#F97316;box-shadow:0 0 0 4px rgba(249,115,22,.18)}
+.inp:disabled{opacity:.7;cursor:not-allowed}
+textarea.inp{border-radius:1.5rem}
+.dark .inp{background:#111827;border-color:#374151;color:#f3f4f6}
+.lbl{display:block;font-size:.8rem;font-weight:600;margin:0 0 .35rem .6rem;color:#4b5563}
+.dark .lbl{color:#d1d5db}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:9999px;padding:.65rem 1.4rem;font-weight:600;transition:.15s;cursor:pointer;border:2px solid transparent}
+.btn-or{background:#F97316;color:#fff}.btn-or:hover{background:#ea580c}
+.btn-green{background:#16a34a;color:#fff}.btn-green:hover{background:#15803d}
+.btn-red{background:#dc2626;color:#fff}.btn-red:hover{background:#b91c1c}
+.btn-ghost{background:#fff;color:#374151;border-color:#e5e7eb}.btn-ghost:hover{border-color:#F97316;color:#ea580c}
+.dark .btn-ghost{background:#1f2937;color:#e5e7eb;border-color:#374151}
+.btn-sm{padding:.35rem .9rem;font-size:.8rem}
+.ph{background:linear-gradient(135deg,#fb923c,#ea580c)}
+.hero-grad{background:linear-gradient(135deg,#f97316,#c2410c)}
+.cd-box{background:rgba(255,255,255,.18);border-radius:1.25rem;padding:.6rem 1rem;min-width:4.2rem;text-align:center;backdrop-filter:blur(4px)}
+.cd-box b{display:block;font-size:1.6rem;line-height:1.1}
+.cd-box span{font-size:.65rem;letter-spacing:.08em;text-transform:uppercase}
+/* Modal */
+.modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:1rem;background:rgba(0,0,0,.55)}
+.modal.open{display:flex}
+.modal>.card{max-height:92vh;overflow:auto}
+/* Mode edit operator */
+.edit-wrap{position:relative}
+.edit-wrap:hover{outline:2px dashed #F97316;outline-offset:2px}
+.edit-btn{position:absolute;top:.5rem;right:.5rem;z-index:20;background:#F97316;color:#fff;border-radius:9999px;padding:.25rem .8rem;font-size:.75rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer}
+.add-btn{margin-top:1rem;border:2px dashed #F97316;color:#ea580c;border-radius:9999px;padding:.45rem 1.2rem;font-weight:600;font-size:.85rem;cursor:pointer;background:transparent}
+.add-btn:hover{background:#fff7ed}
+details.faq summary{cursor:pointer;list-style:none;font-weight:600}
+details.faq summary::-webkit-details-marker{display:none}
+details.faq[open] summary i{transform:rotate(180deg)}
+/* ===== Kartu informasi seragam + aksen abu-abu ===== */
+.chip{width:3rem;height:3rem;border-radius:9999px;background:#e5e7eb;color:#4b5563;display:inline-flex;align-items:center;justify-content:center;font-size:1.15rem;transition:.15s}
+.dark .chip{background:#374151;color:#d1d5db}
+.chip-or{background:rgba(255,255,255,.22);color:#fff}
+.info-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;width:100%;height:100%;padding:1.25rem;background:#fff;color:inherit;border:2px solid #e5e7eb;border-radius:1.5rem;box-shadow:0 6px 24px rgba(0,0,0,.05);cursor:pointer;transition:.15s}
+.info-card:hover{transform:translateY(-3px);border-color:#F97316}
+.info-card:hover .chip{background:#F97316;color:#fff}
+.dark .info-card{background:#1f2937;border-color:#374151}
+.dark .info-card:hover{border-color:#F97316}
+.info-card-cta{background:#F97316;border-color:#F97316;color:#fff}
+.dark .info-card-cta{background:#F97316;border-color:#F97316}
+.info-card-cta:hover{background:#ea580c;border-color:#ea580c}
+.info-card-cta:hover .chip{background:rgba(255,255,255,.3);color:#fff}
+.badge-gray{display:inline-block;border-radius:9999px;background:#e5e7eb;color:#4b5563;padding:.15rem .65rem;font-size:.7rem;font-weight:700}
+.dark .badge-gray{background:#374151;color:#d1d5db}
+.tile{background:#f9fafb;border:1px solid #e5e7eb;border-radius:1.25rem}
+.dark .tile{background:#111827;border-color:#374151}
+.modal-head{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:1rem 1.5rem;background:#f3f4f6;border-bottom:1px solid #e5e7eb}
+.dark .modal-head{background:#1f2937;border-color:#374151}
+/* Cetak */
+@media print{
+  .no-print{display:none !important}
+  body{background:#fff !important;color:#000 !important}
+  .card{box-shadow:none !important}
+  .print-area{display:block !important}
+}
