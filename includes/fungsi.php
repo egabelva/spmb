@@ -249,6 +249,23 @@ function logo_ada() {
     }
     return $v;
 }
+// Foto gedung sekolah di hero beranda (diunggah operator). Tabel dibuat otomatis bila belum ada. Mengembalikan versi (timestamp) atau 0.
+function pastikan_tabel_gedung() {
+    static $ok = false;
+    if ($ok) return;
+    $ok = true;
+    global $koneksi;
+    mysqli_query($koneksi, 'CREATE TABLE IF NOT EXISTS foto_gedung (id TINYINT UNSIGNED NOT NULL DEFAULT 1, gedung_tipe VARCHAR(100) NOT NULL, gedung MEDIUMBLOB NOT NULL, diubah TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (id)) ENGINE=InnoDB');
+}
+function gedung_ada() {
+    static $v = null;
+    if ($v === null) {
+        pastikan_tabel_gedung();
+        $r = db_one('SELECT UNIX_TIMESTAMP(diubah) AS v FROM foto_gedung WHERE id=1');
+        $v = $r ? max(1, (int)$r['v']) : 0;
+    }
+    return $v;
+}
 function logo_html($kecil = false) {
     $s = $kecil ? 'w-9 h-9 text-sm' : 'w-11 h-11';
     $v = logo_ada();
@@ -274,7 +291,7 @@ function html_head($judul, $bodyClass = 'bg-tebu min-h-screen') { ?>
 <script>tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Poppins','ui-sans-serif','system-ui','sans-serif']}}}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=<?= (int)@filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 </head>
 <body class="<?= e($bodyClass) ?> font-sans text-gray-800 dark:text-gray-100">
 <?php }

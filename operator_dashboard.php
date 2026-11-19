@@ -53,6 +53,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else flash('error', 'Pilih berkas logo terlebih dahulu.');
         redirect('operator_dashboard.php?tab=pengaturan#logo');
     }
+    if ($aksi === 'simpan_gedung') {
+        pastikan_tabel_gedung();
+        list($uerr, $unama, $utipe, $udata) = baca_upload('gedung', ['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+        if ($uerr) flash('error', $uerr);
+        elseif ($udata !== null) {
+            if (db_exec('INSERT INTO foto_gedung (id, gedung_tipe, gedung) VALUES (1,?,?) ON DUPLICATE KEY UPDATE gedung_tipe=VALUES(gedung_tipe), gedung=VALUES(gedung)', 'ss', [$utipe, $udata])) { catat_log('ganti_foto_gedung'); flash('ok', 'Foto gedung sekolah diperbarui dan tampil di hero beranda.'); }
+            else flash('error', 'Gagal menyimpan foto gedung.');
+        } elseif (isset($_POST['hapus_gedung'])) {
+            db_exec('DELETE FROM foto_gedung WHERE id=1'); catat_log('hapus_foto_gedung');
+            flash('ok', 'Foto gedung dihapus dari hero beranda.');
+        } else flash('error', 'Pilih berkas foto gedung terlebih dahulu.');
+        redirect('operator_dashboard.php?tab=pengaturan#gedung');
+    }
     if ($aksi === 'ganti_kode') {
         $ka = (string)($_POST['kode_admin'] ?? ''); $ko = (string)($_POST['kode_operator'] ?? '');
         $akhir_a = $ka !== '' ? $ka : setting('kode_universal', 'SMAGM'); $akhir_o = $ko !== '' ? $ko : setting('kode_operator', '');
@@ -69,14 +82,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 html_head('Dashboard Operator', 'bg-tebu min-h-screen');
 ?>
-<header class="sticky top-0 z-50 h-14 bg-gray-900 text-white shadow">
-  <div class="max-w-7xl mx-auto px-4 h-full flex items-center justify-between gap-3">
+<header class="sm:sticky sm:top-0 z-50 min-h-14 bg-gray-900 text-white shadow">
+  <div class="max-w-7xl mx-auto px-4 py-2 min-h-14 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
     <span class="font-extrabold text-sm sm:text-base"><i class="fa-solid fa-screwdriver-wrench text-orange-400 mr-2"></i>Dashboard Operator</span>
-    <nav class="flex gap-2 text-sm font-semibold">
+    <nav class="flex gap-2 text-sm font-semibold order-3 sm:order-none w-full sm:w-auto justify-center">
       <a href="operator_dashboard.php" class="rounded-full px-4 py-1.5 <?= $tab === 'live' ? 'bg-orange-500' : 'bg-white/10' ?>"><i class="fa-solid fa-pen-ruler mr-1"></i>Tampilan Live</a>
       <a href="operator_dashboard.php?tab=pengaturan" class="rounded-full px-4 py-1.5 <?= $tab === 'pengaturan' ? 'bg-orange-500' : 'bg-white/10' ?>"><i class="fa-solid fa-gear mr-1"></i>Pengaturan</a>
     </nav>
-    <div class="flex items-center gap-2"><?= theme_btn() ?><a href="logout.php" class="rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold"><i class="fa-solid fa-right-from-bracket mr-1"></i>Keluar</a></div>
+    <div class="flex items-center gap-2"><?= theme_btn() ?><a href="index.php" target="_blank" class="rounded-full bg-orange-500 px-4 py-1.5 text-sm font-semibold"><i class="fa-solid fa-house sm:mr-1"></i><span class="hidden sm:inline">Lihat Website</span></a><a href="logout.php" class="rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold"><i class="fa-solid fa-right-from-bracket sm:mr-1"></i><span class="hidden sm:inline">Keluar</span></a></div>
   </div>
 </header>
 <?php if ($tab === 'live'): ?>
@@ -132,6 +145,18 @@ html_head('Dashboard Operator', 'bg-tebu min-h-screen');
         <div><label class="lbl">Unggah logo baru (JPG/PNG/WEBP/GIF, maks. <?= round(max_upload_bytes() / 1048576, 1) ?> MB)</label><input class="inp" type="file" name="logo" accept="image/*"></div>
         <?php if (logo_ada()): ?><label class="flex items-center gap-2 text-sm ml-2"><input type="checkbox" name="hapus_logo" class="accent-orange-500"> Hapus logo (kembali ke lambang bawaan &quot;GM&quot;)</label><?php endif; ?>
         <button class="btn btn-or"><i class="fa-solid fa-floppy-disk"></i> Simpan Logo</button>
+      </form>
+    </section>
+    <section id="gedung" class="card p-6">
+      <h2 class="font-extrabold text-xl mb-1"><i class="fa-solid fa-building-columns text-orange-500 mr-2"></i>Foto Gedung Sekolah</h2>
+      <p class="text-sm text-gray-500 mb-4">Foto tampil di bagian bawah hero beranda, di depan motif daun tebu, dengan bagian atas memudar. Disarankan foto gedung lebar (landscape) dengan langit/latar bersih; PNG transparan (gedung saja) hasilnya paling bagus.</p>
+      <form method="post" enctype="multipart/form-data" class="space-y-4">
+        <?= csrf_field() ?><input type="hidden" name="aksi" value="simpan_gedung">
+        <?php if (gedung_ada()): ?><div class="tile p-3 inline-block"><img src="gedung.php?v=<?= gedung_ada() ?>" alt="Foto gedung sekolah" class="max-h-40 rounded-xl"></div>
+        <?php else: ?><p class="text-sm text-gray-500 ml-2">Belum ada foto gedung.</p><?php endif; ?>
+        <div><label class="lbl">Unggah foto gedung (JPG/PNG/WEBP/GIF, maks. <?= round(max_upload_bytes() / 1048576, 1) ?> MB)</label><input class="inp" type="file" name="gedung" accept="image/*"></div>
+        <?php if (gedung_ada()): ?><label class="flex items-center gap-2 text-sm ml-2"><input type="checkbox" name="hapus_gedung" class="accent-orange-500"> Hapus foto gedung dari hero</label><?php endif; ?>
+        <button class="btn btn-or"><i class="fa-solid fa-floppy-disk"></i> Simpan Foto Gedung</button>
       </form>
     </section>
     <section class="card p-6">

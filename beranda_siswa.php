@@ -50,10 +50,11 @@ $dis = $ro ? 'disabled' : '';
 
 html_head('Beranda Pendaftar');
 ?>
-<header class="bg-white/90 dark:bg-gray-900/90 backdrop-blur shadow-sm sticky top-0 z-30 no-print">
+<header class="nav-abu backdrop-blur shadow-sm sticky top-0 z-30 no-print">
   <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
     <a href="index.php"><?= logo_html(true) ?></a>
     <div class="flex items-center gap-2"><span class="hidden sm:inline text-sm font-medium"><i class="fa-solid fa-user mr-1 text-orange-500"></i><?= e($_SESSION['nama'] ?? '') ?></span><?= theme_btn() ?>
+      <a href="index.php" class="btn btn-or btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
       <a href="logout.php" class="btn btn-ghost btn-sm"><i class="fa-solid fa-right-from-bracket"></i> Keluar</a></div>
   </div>
 </header>

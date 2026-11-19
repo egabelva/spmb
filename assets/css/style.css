@@ -1,7 +1,14 @@
 /* Pola latar "tebu" + gaya global SPMB SMA Gunung Madu */
 html{scroll-behavior:smooth}
-.bg-tebu{background-color:#F3F4F6;background-image:radial-gradient(#d1d5db 1.2px,transparent 1.2px);background-size:22px 22px}
-.dark .bg-tebu{background-color:#111827;background-image:radial-gradient(#374151 1.2px,transparent 1.2px)}
+.bg-tebu{background-color:#F3F4F6;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%23d1d5db' stroke-width='2'/%3E%3Cpath d='M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%23d1d5db' stroke-width='2'/%3E%3C/svg%3E");background-size:56px 100px}
+.dark .bg-tebu{background-color:#111827;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%236b7280' stroke-width='2'/%3E%3Cpath d='M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%236b7280' stroke-width='2'/%3E%3C/svg%3E")}
+/* Header utama abu-abu */
+.nav-abu{background-color:rgba(209,213,219,.95);color:#111827}
+.dark .nav-abu{background-color:rgba(55,65,81,.95);color:#f3f4f6}
+/* Foto gedung di hero: menempel penuh di bawah, bagian atas memudar ke motif daun tebu */
+.gedung-card{position:relative;width:min(100%,720px);margin-bottom:-4rem;border-radius:1rem 1rem 0 0;overflow:hidden}
+.gedung-card img{display:block;width:100%;height:auto;max-height:300px;object-fit:cover;object-position:center bottom;-webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.5) 20%,#000 50%,#000 100%);mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.5) 20%,#000 50%,#000 100%)}
+@media(min-width:640px){.gedung-card{margin-bottom:-5rem}}
 .card{background:#fff;border-radius:1.5rem;box-shadow:0 6px 24px rgba(0,0,0,.06)}
 .dark .card{background:#1f2937;box-shadow:0 6px 24px rgba(0,0,0,.35)}
 .inp{width:100%;border:2px solid #e5e7eb;border-radius:9999px;padding:.65rem 1.1rem;background:#fff;color:#111827;outline:none;transition:.15s}
@@ -55,6 +62,40 @@ details.faq[open] summary i{transform:rotate(180deg)}
 .dark .tile{background:#111827;border-color:#374151}
 .modal-head{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:1rem 1.5rem;background:#f3f4f6;border-bottom:1px solid #e5e7eb}
 .dark .modal-head{background:#1f2937;border-color:#374151}
+/* ===== Hero: latar oranye + motif daun tebu abu-abu ===== */
+.hero-mesh{background:linear-gradient(135deg,#f97316 0%,#ea580c 48%,#c2410c 100%)}
+.hero-daun{-webkit-mask-image:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.22) 0,rgba(0,0,0,.22) 38%,#000 88%);mask-image:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.22) 0,rgba(0,0,0,.22) 38%,#000 88%)}
+.hero-scrim{background:radial-gradient(ellipse at 50% 48%,rgba(124,45,18,.5) 0,rgba(124,45,18,.14) 68%,transparent 100%)}
+.hero-teks h1,.hero-teks p{text-shadow:0 2px 12px rgba(67,20,7,.55)}
+/* ===== Responsif mobile ===== */
+html,body{overflow-x:clip}
+img,iframe,canvas,video{max-width:100%}
+@media(max-width:640px){
+  .modal{padding:.5rem}
+  .modal .p-6{padding:1rem}
+  .modal-head{padding:.75rem 1rem}
+  .info-card{padding:1rem}
+  .card{border-radius:1.1rem}
+  .btn{padding:.55rem 1.1rem}
+  .btn-sm{padding:.35rem .75rem}
+}
+@media(max-width:480px){
+  #countdown{gap:.4rem}
+  .cd-box{min-width:3.4rem;padding:.5rem .55rem;border-radius:1rem}
+  .cd-box b{font-size:1.25rem}
+  .nav-abu .btn-sm{padding:.3rem .6rem;font-size:.72rem}
+  .nav-abu .btn-sm i{display:none}
+  .nav-abu .leading-tight .block:first-child{font-size:.8rem}
+  .nav-abu .leading-tight .block:nth-child(2){display:none}
+}
+/* Form di HP: cegah zoom otomatis iOS & input meluber */
+.inp{min-width:0;max-width:100%;box-sizing:border-box}
+input[type=date].inp,input[type=file].inp{-webkit-appearance:none;appearance:none}
+@media(max-width:640px){
+  .inp,select.inp,textarea.inp{font-size:16px}
+  .btn{min-height:2.5rem}
+  main .flex-wrap>.btn{flex:1 1 auto}
+}
 /* Cetak */
 @media print{
   .no-print{display:none !important}

@@ -61,10 +61,11 @@ $d = $in ?? array_fill_keys(FIELD_PENDAFTAR, '');
 
 html_head('Dashboard Admin');
 ?>
-<header class="bg-white/90 dark:bg-gray-900/90 backdrop-blur shadow-sm sticky top-0 z-30 no-print">
+<header class="nav-abu backdrop-blur shadow-sm sticky top-0 z-30 no-print">
   <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
     <a href="index.php"><?= logo_html(true) ?></a>
     <div class="flex items-center gap-2"><span class="hidden sm:inline rounded-full bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1">ADMIN PPDB</span><?= theme_btn() ?>
+      <a href="index.php" class="btn btn-or btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
       <a href="logout.php" class="btn btn-ghost btn-sm"><i class="fa-solid fa-right-from-bracket"></i> Keluar</a></div>
   </div>
 </header>
