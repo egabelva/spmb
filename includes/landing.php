@@ -10,16 +10,14 @@ $BAGIAN = [
  'akreditasi'=> ['Akreditasi','fa-award','Judul = peringkat (mis. A), Isi = keterangan SK akreditasi'],
  'fasilitas' => ['Fasilitas','fa-building','Judul = nama fasilitas, Isi = deskripsi, Gambar = foto'],
  'prestasi'  => ['Prestasi','fa-trophy','Judul = nama prestasi, Isi = tingkat/tahun, Gambar = foto'],
- 'ekskul'    => ['Ekstrakurikuler','fa-futbol','Judul = nama ekskul, Isi = keterangan kegiatan'],
- 'organisasi'=> ['Organisasi','fa-people-group','Judul = nama organisasi, Isi = keterangan'],
+ 'ekskul'    => ['Ekstrakurikuler','fa-futbol','Judul = nama ekskul, Isi = keterangan kegiatan, Gambar = foto kegiatan'],
+ 'organisasi'=> ['Organisasi','fa-people-group','Judul = nama organisasi, Isi = keterangan, Gambar = foto kegiatan'],
  'guru'      => ['Profil Guru','fa-chalkboard-user','Judul = nama guru, Isi = mata pelajaran/jabatan, Gambar = foto'],
  'galeri'    => ['Galeri','fa-images','Judul = keterangan, Gambar = foto, Tautan = link video (mis. YouTube) bila berupa video'],
- 'agenda'    => ['Agenda & Event','fa-calendar-days','Judul = nama event, Isi = waktu/keterangan'],
- 'berita'    => ['Berita','fa-newspaper','Judul = judul berita, Isi = ringkasan, Gambar = foto'],
+ 'agenda'    => ['Agenda & Event','fa-calendar-days','Judul = nama event, Isi = waktu/keterangan, Gambar = foto event'],
  'jadwal'    => ['Jadwal PPDB','fa-calendar-check','Judul = tahapan, Isi = tanggal pelaksanaan'],
  'syarat'    => ['Syarat Pendaftaran','fa-clipboard-check','Judul = satu syarat per item'],
  'biaya'     => ['Biaya','fa-money-bill-wave','Judul = komponen biaya, Isi = nominal/keterangan'],
- 'faq'       => ['FAQ','fa-circle-question','Judul = pertanyaan, Isi = jawaban'],
 ];
 
 // Kartu informasi: kunci => [ikon, judul, deskripsi singkat]. Kunci sama dengan nama bagian konten.
@@ -40,12 +38,10 @@ $KARTU = [
  'guru'      => ['fa-chalkboard-user','Profil Guru','Tenaga pendidik kami'],
  'galeri'    => ['fa-images','Galeri','Foto dan video sekolah'],
  'agenda'    => ['fa-calendar-days','Agenda & Event','Kegiatan sepanjang tahun'],
- 'berita'    => ['fa-newspaper','Berita','Kabar terbaru sekolah'],
- 'faq'       => ['fa-circle-question','FAQ','Pertanyaan yang sering diajukan'],
- 'kontak'    => ['fa-location-dot','Kontak & Lokasi','Alamat, telepon, dan peta'],
+ 'kontak'    => ['fa-location-dot','Kontak & Lokasi','Alamat, telepon, dan email'],
 ];
 $KARTU_DAFTAR = ['jadwal', 'jalur', 'syarat', 'biaya'];
-$KARTU_SEKOLAH = ['profil', 'visi', 'misi', 'sejarah', 'akreditasi', 'fasilitas', 'prestasi', 'ekskul', 'organisasi', 'guru', 'galeri', 'agenda', 'berita', 'faq', 'kontak'];
+$KARTU_SEKOLAH = ['profil', 'visi', 'misi', 'sejarah', 'akreditasi', 'fasilitas', 'prestasi', 'ekskul', 'organisasi', 'guru', 'galeri', 'agenda', 'kontak'];
 
 function konten_semua() {
     static $k = null;
@@ -80,7 +76,7 @@ function gambar_atau($r, $ikon, $cls) {
     return '<div class="' . $cls . ' ph flex items-center justify-center"><i class="fa-solid ' . $ikon . ' text-4xl text-white/80"></i></div>';
 }
 function sec_label($ikon, $judul, $sub = '') {
-    echo '<div class="flex items-center gap-3 mb-5"><span class="w-10 h-10 shrink-0 rounded-full bg-gray-700 text-white flex items-center justify-center"><i class="fa-solid ' . $ikon . '"></i></span>'
+    echo '<div class="sec-head flex items-center gap-3 mb-5"><span class="w-10 h-10 shrink-0 rounded-full bg-gray-700 text-white flex items-center justify-center"><i class="fa-solid ' . $ikon . '"></i></span>'
        . '<div><h2 class="text-xl sm:text-2xl font-extrabold leading-tight">' . e($judul) . '</h2>'
        . ($sub ? '<p class="text-sm text-gray-500 dark:text-gray-400">' . e($sub) . '</p>' : '') . '</div>'
        . '<span class="flex-1 h-px bg-gray-300 dark:bg-gray-600 ml-2"></span></div>';
@@ -90,7 +86,7 @@ function sec_label($ikon, $judul, $sub = '') {
 function kartu_info($key, $edit) {
     global $KARTU;
     $k = $KARTU[$key];
-    if ($key === 'kontak') $badge = '<span class="badge-gray">Peta</span>';
+    if ($key === 'kontak') $badge = '<span class="badge-gray">Info</span>';
     else $badge = '<span class="badge-gray">' . ($key === 'jalur' ? count(jalur_list()) : count(konten($key))) . ' item</span>';
     return '<button type="button" data-open="info-' . e($key) . '" class="info-card"><span class="chip"><i class="fa-solid ' . $k[0] . '"></i></span>'
          . '<span class="block font-bold mt-3">' . e($k[1]) . '</span>'
@@ -122,7 +118,7 @@ function isi_modal($b, $edit) {
     }
     if ($b === 'kontak') {
         $wa = preg_replace('/\D/', '', setting('wa', ''));
-        echo '<div class="grid md:grid-cols-2 gap-5"><div class="tile p-5 space-y-4' . $ew . '">';
+        echo '<div><div class="tile p-5 space-y-4' . $ew . '">';
         if ($edit) echo '<a href="operator_dashboard.php?tab=pengaturan#kontak" class="edit-btn"><i class="fa-solid fa-pen"></i> Edit</a>';
         echo '<p class="flex gap-3"><i class="fa-solid fa-location-dot text-orange-500 mt-1"></i><span>' . nl2br(e(setting('alamat'))) . '</span></p>'
            . '<p class="flex gap-3"><i class="fa-solid fa-phone text-orange-500 mt-1"></i><span>' . e(setting('telepon')) . '</span></p>'
@@ -132,9 +128,6 @@ function isi_modal($b, $edit) {
         foreach ([['instagram','fa-instagram'],['facebook','fa-facebook'],['youtube','fa-youtube'],['tiktok','fa-tiktok']] as $s) {
             if (setting($s[0]) !== '') echo '<a href="' . e(setting($s[0])) . '" target="_blank" rel="noopener" title="' . ucfirst($s[0]) . '" class="w-11 h-11 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center hover:bg-orange-500 hover:text-white"><i class="fa-brands ' . $s[1] . '"></i></a>';
         }
-        echo '</div></div><div class="tile overflow-hidden min-h-[16rem]">';
-        if (setting('maps_embed') !== '') echo '<iframe src="' . e(setting('maps_embed')) . '" class="w-full h-full min-h-[16rem]" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Lokasi sekolah"></iframe>';
-        else echo '<div class="p-8 text-gray-500">Peta lokasi belum diatur.</div>';
         echo '</div></div>';
         return;
     }
@@ -154,7 +147,7 @@ function isi_modal($b, $edit) {
         foreach ($items as $r) echo '<div class="tile p-4 mb-3 flex gap-3' . $ew . $pr . '">' . btn_edit($r, $edit) . '<i class="fa-solid fa-circle-check text-orange-500 mt-1"></i><span>' . e($r['isi']) . '</span></div>';
         return;
     }
-    if (in_array($b, ['fasilitas', 'prestasi', 'berita'], true)) {
+    if (in_array($b, ['fasilitas', 'prestasi', 'agenda', 'ekskul', 'organisasi'], true)) {
         echo '<div class="grid sm:grid-cols-2 gap-4">';
         foreach ($items as $r) {
             echo '<div class="tile overflow-hidden' . $ew . '">' . btn_edit($r, $edit) . gambar_atau($r, $ikon, 'w-full h-40') . '<div class="p-4"><h4 class="font-bold">' . e($r['judul']) . '</h4>';
@@ -178,10 +171,6 @@ function isi_modal($b, $edit) {
             echo '<figcaption class="p-3 text-sm font-medium">' . e($r['judul']) . '</figcaption></figure>';
         }
         echo '</div>';
-        return;
-    }
-    if ($b === 'faq') {
-        foreach ($items as $r) echo '<details class="faq tile px-5 py-4 mb-3' . $ew . '">' . btn_edit($r, $edit) . '<summary class="flex justify-between items-center gap-3' . $pr . '"><span>' . e($r['judul']) . '</span><i class="fa-solid fa-chevron-down text-orange-500 transition"></i></summary><p class="mt-3 text-gray-600 dark:text-gray-300">' . nl2br(e($r['isi'])) . '</p></details>';
         return;
     }
     if ($b === 'jadwal') {
@@ -256,7 +245,7 @@ function render_landing($edit = false) {
   <?php if ($edit): ?><a href="operator_dashboard.php?tab=pengaturan#gedung" class="edit-btn" style="right:auto;left:.5rem"><i class="fa-solid fa-building-columns"></i> Foto Gedung</a><?php endif; ?>
   <?= $b0 ? btn_edit($b0, $edit) : btn_tambah('banner', $edit) ?>
   <div class="relative max-w-6xl mx-auto px-4 py-16 sm:py-20 text-center hero-teks">
-    <span class="inline-block rounded-full bg-white/20 px-4 py-1 text-xs font-semibold tracking-widest mb-5">SMART â€¢ HEBAT â€¢ BERMARTABAT</span>
+    <span class="inline-block rounded-full bg-white/20 px-4 py-1 text-xs font-semibold tracking-widest mb-5">SMART &bull; HEBAT &bull; BERMARTABAT</span>
     <h1 class="text-3xl sm:text-5xl font-extrabold leading-tight"><?= e($b0['judul'] ?? 'Penerimaan Murid Baru SMA Gunung Madu 2027') ?></h1>
     <p class="mt-4 text-lg max-w-2xl mx-auto text-white/90"><?= e($b0['isi'] ?? 'Daftarkan dirimu secara online dan jadilah bagian dari keluarga besar kami.') ?></p>
     <div class="mt-8 flex flex-wrap gap-3 justify-center">
@@ -302,8 +291,8 @@ function render_landing($edit = false) {
 </main>
 
 <footer class="bg-gray-800 text-gray-300 py-8 text-center text-sm">
-  <p class="font-bold text-white">SMA Gunung Madu</p><p class="text-orange-400 tracking-widest text-xs mb-2">SMART â€¢ HEBAT â€¢ BERMARTABAT</p>
-  <p>&copy; <?= date('Y') ?> Panitia SPMB SMA Gunung Madu. Hak cipta dilindungi.</p>
+  <p class="font-bold text-white">SMA Gunung Madu</p><p class="text-orange-400 tracking-widest text-xs mb-2">SMART &bull; HEBAT &bull; BERMARTABAT</p>
+  <p>&copy; <?= date('Y') ?> BETA Team, Project Manager = Ega Belva Sofyana</p>
   <?php if (!$edit): ?><p class="mt-2 no-print"><a href="login.php" class="text-gray-500 hover:text-orange-400">Masuk Admin / Operator</a></p><?php endif; ?>
 </footer>
 <?php if ($wa && !$edit): ?><a href="https://wa.me/<?= $wa ?>" target="_blank" rel="noopener" title="Chat Customer Service" class="no-print fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-green-500 text-white text-3xl flex items-center justify-center shadow-lg hover:bg-green-600"><i class="fa-brands fa-whatsapp"></i></a><?php endif; ?>

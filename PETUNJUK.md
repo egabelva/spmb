@@ -19,7 +19,7 @@ Jika MySQL Anda memakai password, ubah `$DB_PASS` di `koneksi.php`. Website mema
 Kode Admin dan Operator dapat diganti di **Dashboard Operator -> Pengaturan -> Kode Masuk**.
 
 ## Ringkasan Fitur
-- **Publik (index.php):** beranda, statistik & hitung mundur, info PPDB (jadwal, jalur, syarat, biaya), profil sekolah, fasilitas, prestasi, ekskul, organisasi, guru, galeri, agenda, berita, FAQ, kontak/peta/WhatsApp, mode terang-gelap.
+- **Publik (index.php):** beranda, statistik & hitung mundur, info PPDB (jadwal, jalur, syarat, biaya), profil sekolah, fasilitas, prestasi, ekskul, organisasi, guru, galeri, agenda, kontak (teks alamat, telepon, email)/WhatsApp, mode terang-gelap.
 - **Pendaftar:** buat akun, login, isi biodata, simpan draft, indikator progres, unggah dokumen, kirim, bukti pendaftaran (cetak/PDF), lihat status & hasil, surat kelulusan.
 - **Admin:** statistik & grafik, tabel dengan filter status & pencarian, detail (modal), Terima/Tolak (Tolak ada konfirmasi), isi pendaftar offline, ekspor Excel (CSV), cetak/PDF, atur kuota/batas daftar/jalur, tombol **Umumkan hasil seleksi**.
 - **Operator:** tampilan website langsung dengan tombol **Edit** di setiap elemen (ubah teks, hapus, unggah foto), kontak & statistik, ganti kode masuk.

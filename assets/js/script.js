@@ -68,7 +68,7 @@ function hitungProgres(){
   var form=document.getElementById('form-daftar');
   if(!form)return;
   var req=form.querySelectorAll('[data-req]'),isi=0;
-  req.forEach(function(f){if(f.type==='file'){if(f.files.length||f.getAttribute('data-ada')==='1')isi++;}else if(f.value.trim()!=='')isi++;});
+  req.forEach(function(f){var ok=false;if(f.type==='file'){ok=f.files.length>0||f.getAttribute('data-ada')==='1';}else{ok=f.value.trim()!=='';}if(ok)isi++;f.classList.toggle('terisi',ok);});
   var p=Math.round(isi/req.length*100);
   var bar=document.getElementById('bar-progres'),txt=document.getElementById('txt-progres');
   if(bar)bar.style.width=p+'%'; if(txt)txt.textContent=p+'% ('+isi+' dari '+req.length+' bagian terisi)';
@@ -87,7 +87,9 @@ function bukaEdit(btn){
   document.getElementById('konten-judul').textContent=(d.id>0?'Edit ':'Tambah ')+d.label;
   document.getElementById('konten-hint').textContent=d.hint;
   document.getElementById('konten-hapus').classList.toggle('hidden',!(d.id>0));
-  document.getElementById('konten-hapusgbr').classList.toggle('hidden',!d.ada_gambar);
+  var bergambar=['banner','fasilitas','prestasi','ekskul','organisasi','guru','galeri','agenda'].indexOf(d.bagian)>-1;
+  document.getElementById('konten-foto').classList.toggle('hidden',!bergambar);
+  document.getElementById('konten-hapusgbr').classList.toggle('hidden',!(bergambar&&d.ada_gambar));
   document.getElementById('hapus-id').value=d.id;
   document.getElementById('hapus-bagian').value=d.bagian;
   openModal('modal-konten');
@@ -113,6 +115,7 @@ function bukaDetail(tr){
     ['Orang tua/wali',d.tipe_batih+' - '+d.nama_batih],['Pekerjaan',d.pekerjaan_batih],['Kontak',d.kontak_batih],
     ['Berkas',d.nama_berkas||'(tidak ada)'],['Sumber',d.sumber],['Waktu daftar',d.waktu],['Status',d.status]];
   var h='';rows.forEach(function(r){h+='<div class="py-2 border-b border-gray-100 dark:border-gray-700 sm:flex"><dt class="sm:w-48 text-xs font-semibold text-gray-500">'+r[0]+'</dt><dd class="font-medium break-words">'+(r[1]===null||r[1]===undefined?'-':String(r[1]).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}))+'</dd></div>';});
+  if(d.berkas&&d.berkas.length){h+='<div class="py-2 sm:flex"><dt class="sm:w-48 text-xs font-semibold text-gray-500">Buka berkas</dt><dd class="font-medium flex flex-wrap gap-2">';d.berkas.forEach(function(b){h+='<a target="_blank" class="btn btn-ghost btn-sm" href="lihat_berkas.php?id='+d.id+'&berkas='+b.id+'"><i class="fa-solid fa-paperclip"></i> '+escH(b.nama)+'</a>';});h+='</dd></div>';}
   document.getElementById('detail-isi').innerHTML=h;
   var t=window.CSRF||'';
   document.getElementById('d-berkas').classList.toggle('hidden',!d.nama_berkas);
@@ -123,9 +126,24 @@ function bukaDetail(tr){
   var tl=document.getElementById('d-tolak');
   tl.href='admin_dashboard.php?aksi=tolak&id='+d.id+'&t='+t;
   tl.setAttribute('data-confirm','Yakin menolak pendaftaran '+d.nama_lengkap+'?');
+  var hp=document.getElementById('d-hapus');
+  if(hp){hp.href='admin_dashboard.php?aksi=hapus&id='+d.id+'&t='+t;hp.setAttribute('data-confirm','HAPUS PERMANEN pendaftar '+d.nama_lengkap+' ('+(d.no_pendaftaran||'-')+') beserta seluruh berkasnya? Tindakan ini tidak dapat dibatalkan.');}
   openModal('modal-detail');
 }
 document.addEventListener('DOMContentLoaded',filterTabel);
+
+/* Pendaftar: tambah kolom unggah berkas secara manual */
+function escH(s){return String(s===null||s===undefined?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+window.tambahBerkas=function(b){
+  var wrap=document.getElementById('daftar-input-berkas');
+  var maks=parseInt(b.getAttribute('data-maks'),10)||1;
+  if(wrap.children.length>=maks){alert('Jumlah berkas sudah mencapai batas maksimal.');return;}
+  var row=document.createElement('div');row.className='flex gap-2 items-center';
+  var inp=document.createElement('input');inp.type='file';inp.name='berkas[]';inp.accept='.pdf,.jpg,.jpeg,.png';inp.className='inp';
+  var del=document.createElement('button');del.type='button';del.className='btn btn-ghost btn-sm';del.title='Hapus kolom ini';del.innerHTML='<i class="fa-solid fa-xmark"></i>';
+  del.onclick=function(){row.remove();};
+  row.appendChild(inp);row.appendChild(del);wrap.appendChild(row);
+};
 
 /* Buka jendela kartu dari hash (#m-profil dst.), dipakai operator setelah simpan/hapus konten */
 document.addEventListener('DOMContentLoaded',function(){

@@ -7,6 +7,16 @@ $row = db_one('SELECT ' . KOLOM_PENDAFTAR . ' FROM v_pendaftar WHERE akun_id=?',
 $umum = setting('hasil_diumumkan') === '1';
 $errors = []; $in = null;
 
+// Hapus satu berkas (hanya saat masih Draft) lewat tautan dengan token CSRF.
+if (isset($_GET['hapus_berkas'])) {
+    csrf_check($_GET['t'] ?? '');
+    if ($row && $row['status'] === 'Draft') {
+        hapus_berkas_id((int)$_GET['hapus_berkas'], (int)$row['id']);
+        flash('ok', 'Berkas dihapus.');
+    }
+    redirect('beranda_siswa.php');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
     $aksi = $_POST['aksi'] ?? '';
@@ -15,11 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $kirim = $aksi === 'kirim';
         $in = kumpul_input();
         $errors = validasi_pendaftar($in, $kirim);
-        list($uerr, $unama, $utipe, $udata) = baca_upload('berkas', ['application/pdf', 'image/jpeg', 'image/png']);
-        if ($uerr) $errors[] = $uerr;
+        list($uerrs, $ufiles) = baca_upload_multi('berkas', ['application/pdf', 'image/jpeg', 'image/png']);
+        foreach ($uerrs as $ue) $errors[] = $ue;
+        $sudahAda = $row ? jumlah_berkas((int)$row['id']) : 0;
+        if ($sudahAda + count($ufiles) > MAKS_BERKAS) $errors[] = 'Maksimal ' . MAKS_BERKAS . ' berkas per pendaftar.';
         if ($kirim) {
             if (deadline_lewat()) $errors[] = 'Pendaftaran sudah ditutup.';
-            $adaBerkas = $udata !== null || ($row && $row['nama_berkas'] !== '');
+            $adaBerkas = count($ufiles) > 0 || ($row && $row['nama_berkas'] !== '');
             if (!$adaBerkas) $errors[] = 'Dokumen persyaratan wajib diunggah (PDF/JPG/PNG).';
             if ($in['nik_nisn'] !== '' && nik_terdaftar($in['nik_nisn'])) $errors[] = 'NIK/NISN ini sudah terdaftar.';
         }
@@ -27,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = simpan_pendaftar($row ? (int)$row['id'] : 0, $akun_id, $in, 'Draft', 'Online');
             if ($id <= 0) { $errors[] = 'Gagal menyimpan data. Coba lagi.'; }
             else {
-                if ($udata !== null && !simpan_berkas($id, $unama, $utipe, $udata)) $errors[] = 'Berkas gagal disimpan ke database. Pastikan max_allowed_packet MySQL cukup besar.';
+                foreach ($ufiles as $uf) { if (!simpan_berkas($id, $uf[0], $uf[1], $uf[2])) { $errors[] = 'Berkas "' . $uf[0] . '" gagal disimpan ke database. Pastikan max_allowed_packet MySQL cukup besar.'; break; } }
                 if (!$errors && $kirim) {
                     db_exec("UPDATE pendaftar SET status='Pending', waktu_daftar=NOW() WHERE id=?", 'i', [$id]);
                     catat_status($id, 'Draft', 'Pending', 'Pendaftar');
@@ -46,6 +58,7 @@ if (!$row && $in === null) $d['nama_lengkap'] = $_SESSION['nama'] ?? '';
 $ro = $row && $row['status'] !== 'Draft';
 $status = $row['status'] ?? 'Draft';
 $adaBerkas = $row && $row['nama_berkas'] !== '';
+$daftarBerkas = $row ? daftar_berkas((int)$row['id']) : [];
 $dis = $ro ? 'disabled' : '';
 
 html_head('Beranda Pendaftar');
@@ -60,6 +73,20 @@ html_head('Beranda Pendaftar');
 </header>
 <main class="max-w-4xl mx-auto px-4 py-8 space-y-6">
   <?= flash_html() ?>
+
+  <?php if (!$ro): ?>
+  <section class="langkah-daftar">
+    <h2 class="font-extrabold text-xl mb-3"><i class="fa-solid fa-list-check text-orange-500 mr-2"></i>Langkah-langkah Mengisi Pendaftaran</h2>
+    <ol>
+      <li><span>Siapkan <b>dokumen persyaratan</b> (ijazah/SKL, KK, akta kelahiran), lalu siapkan masing-masing sebagai berkas PDF/JPG/PNG (tidak perlu digabung).</span></li>
+      <li><span>Isi <b>Biodata Calon Siswa</b>. Semua kolom berwarna <b>kuning</b> dan bertanda <b class="text-red-600">*</b> wajib diisi.</span></li>
+      <li><span>Isi <b>Data Orang Tua / Wali</b>, termasuk nomor HP/WhatsApp yang aktif.</span></li>
+      <li><span><b>Unggah dokumen persyaratan</b> pada bagian paling bawah, lalu klik <b>Tambah Berkas</b> untuk mengunggah dokumen berikutnya.</span></li>
+      <li><span>Pastikan semua kolom sudah berubah menjadi <b>hijau</b> dan bilah progres menunjukkan <b>100%</b>.</span></li>
+      <li><span>Jika belum selesai, tekan <b>Simpan Draft</b> dan lanjutkan nanti. Jika sudah lengkap dan benar, tekan <b>Kirim Pendaftaran</b>. Data tidak dapat diubah setelah dikirim.</span></li>
+    </ol>
+  </section>
+  <?php endif; ?>
 
   <section class="card p-6">
     <h2 class="font-extrabold text-xl mb-4"><i class="fa-solid fa-flag-checkered text-orange-500 mr-2"></i>Status Pendaftaran</h2>
@@ -94,7 +121,7 @@ html_head('Beranda Pendaftar');
     <form id="form-daftar" method="post" enctype="multipart/form-data" class="grid sm:grid-cols-2 gap-4">
       <?= csrf_field() ?>
       <h3 class="sm:col-span-2 font-bold text-orange-600"><i class="fa-solid fa-id-card mr-1"></i>Biodata Calon Siswa</h3>
-      <div><label class="lbl">NIK / NISN</label><input class="inp" name="nik_nisn" data-req value="<?= e($d['nik_nisn']) ?>" inputmode="numeric" maxlength="16" <?= $dis ?>></div>
+      <div><label class="lbl">NISN</label><input class="inp" name="nik_nisn" data-req value="<?= e($d['nik_nisn']) ?>" inputmode="numeric" maxlength="16" <?= $dis ?>></div>
       <div><label class="lbl">Nama lengkap</label><input class="inp" name="nama_lengkap" data-req value="<?= e($d['nama_lengkap']) ?>" maxlength="150" <?= $dis ?>></div>
       <div><label class="lbl">Jenis kelamin</label><select class="inp" name="jenis_kelamin" data-req <?= $dis ?>><option value="">-- Pilih --</option>
         <?php foreach (['Laki-laki', 'Perempuan'] as $o): ?><option value="<?= e($o) ?>" <?= $d['jenis_kelamin'] === $o ? 'selected' : '' ?>><?= e($o) ?></option><?php endforeach; ?></select></div>
@@ -112,9 +139,10 @@ html_head('Beranda Pendaftar');
       <div><label class="lbl">Nomor HP / WhatsApp aktif</label><input class="inp" name="kontak_batih" data-req value="<?= e($d['kontak_batih']) ?>" maxlength="25" <?= $dis ?>></div>
       <h3 class="sm:col-span-2 font-bold text-orange-600 mt-2"><i class="fa-solid fa-paperclip mr-1"></i>Dokumen Persyaratan</h3>
       <div class="sm:col-span-2">
-        <?php if ($adaBerkas): ?><p class="text-sm mb-2 ml-2"><i class="fa-solid fa-file-circle-check text-green-600 mr-1"></i>Berkas tersimpan: <b><?= e($row['nama_berkas']) ?></b><?= $ro ? '' : ' (unggah lagi untuk mengganti)' ?></p><?php endif; ?>
-        <?php if (!$ro): ?><input class="inp" type="file" name="berkas" accept=".pdf,.jpg,.jpeg,.png" data-req data-ada="<?= $adaBerkas ? '1' : '0' ?>">
-        <p class="text-xs text-gray-500 mt-1 ml-3">Gabungkan semua dokumen (ijazah/SKL, KK, akta, dsb.) dalam satu berkas PDF/JPG/PNG, maks. <?= round(max_upload_bytes() / 1048576, 1) ?> MB.</p><?php endif; ?>
+        <?php if ($adaBerkas): ?><ul class="mb-3 space-y-2"><?php foreach ($daftarBerkas as $bf): ?><li class="flex items-center justify-between gap-2 rounded-2xl bg-green-50 dark:bg-gray-900 px-4 py-2 text-sm"><span class="break-all"><i class="fa-solid fa-file-circle-check text-green-600 mr-2"></i><a href="lihat_berkas.php?id=<?= (int)$row['id'] ?>&berkas=<?= (int)$bf['id'] ?>" target="_blank" class="font-semibold hover:underline"><?= e($bf['nama_berkas']) ?></a></span><?php if (!$ro): ?><a href="beranda_siswa.php?hapus_berkas=<?= (int)$bf['id'] ?>&t=<?= e(csrf_token()) ?>" data-confirm="Hapus berkas <?= e($bf['nama_berkas']) ?>?" class="btn btn-red btn-sm" title="Hapus berkas"><i class="fa-solid fa-trash"></i></a><?php endif; ?></li><?php endforeach; ?></ul><?php endif; ?>
+        <?php if (!$ro): ?><div id="daftar-input-berkas" class="space-y-2"><div class="flex gap-2 items-center"><input class="inp" type="file" name="berkas[]" accept=".pdf,.jpg,.jpeg,.png" data-req data-ada="<?= $adaBerkas ? '1' : '0' ?>"></div></div>
+        <button type="button" id="btn-tambah-berkas" onclick="tambahBerkas(this)" class="btn btn-ghost btn-sm mt-2" data-maks="<?= (int)max(1, MAKS_BERKAS - count($daftarBerkas)) ?>"><i class="fa-solid fa-plus"></i> Tambah Berkas</button>
+        <p class="text-xs text-gray-500 mt-1 ml-3">Unggah dokumen satu per satu (ijazah/SKL, KK, akta, dsb.) berformat PDF/JPG/PNG. Klik Tambah Berkas untuk dokumen berikutnya, maks. per berkas <?= round(max_upload_bytes() / 1048576, 1) ?> MB.</p><?php endif; ?>
       </div>
       <?php if (!$ro): ?>
       <div class="sm:col-span-2 flex flex-wrap gap-3 mt-2">

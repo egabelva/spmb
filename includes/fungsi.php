@@ -16,7 +16,7 @@ const KOLOM_PENDAFTAR = 'id,akun_id,no_pendaftaran,nik_nisn,nama_lengkap,jenis_k
 const TABEL_BAGIAN = [
     'banner'=>'banner','profil'=>'profil_sekolah','visi'=>'visi','misi'=>'misi','sejarah'=>'sejarah','akreditasi'=>'akreditasi',
     'fasilitas'=>'fasilitas','prestasi'=>'prestasi','ekskul'=>'ekstrakurikuler','organisasi'=>'organisasi','guru'=>'guru','galeri'=>'galeri',
-    'agenda'=>'agenda','berita'=>'berita','jadwal'=>'jadwal_ppdb','syarat'=>'syarat_pendaftaran','biaya'=>'biaya_pendaftaran','faq'=>'faq',
+    'agenda'=>'agenda','jadwal'=>'jadwal_ppdb','syarat'=>'syarat_pendaftaran','biaya'=>'biaya_pendaftaran',
 ];
 function tabel_bagian($b) { return TABEL_BAGIAN[$b] ?? null; }
 
@@ -55,7 +55,7 @@ function muat_setting() {
         $c['kuota'] = (string)$r['kuota']; $c['deadline'] = (string)($r['deadline'] ?? '');
         $c['hasil_diumumkan'] = (string)$r['hasil_diumumkan']; $c['siswa_aktif'] = (string)$r['siswa_aktif'];
     }
-    $r = db_one('SELECT alamat, telepon, email, wa, maps_embed FROM kontak_sekolah WHERE id=1');
+    $r = db_one('SELECT alamat, telepon, email, wa FROM kontak_sekolah WHERE id=1');
     if ($r) foreach ($r as $k => $v) $c[$k] = (string)$v;
     foreach (db_all('SELECT platform, url FROM media_sosial') as $m) $c[$m['platform']] = (string)$m['url'];
     foreach (db_all('SELECT peran, kode FROM kode_akses') as $m) $c[$m['peran'] === 'Admin' ? 'kode_universal' : 'kode_operator'] = (string)$m['kode'];
@@ -72,7 +72,7 @@ function simpan_setting($k, $v) {
             return db_exec('INSERT INTO pengaturan_ppdb (id, deadline) VALUES (1, ?) ON DUPLICATE KEY UPDATE deadline = VALUES(deadline)', 's', [$v === '' ? null : $v]);
         case 'hasil_diumumkan':
             return db_exec('INSERT INTO pengaturan_ppdb (id, hasil_diumumkan) VALUES (1, ?) ON DUPLICATE KEY UPDATE hasil_diumumkan = VALUES(hasil_diumumkan)', 'i', [$v === '1' ? 1 : 0]);
-        case 'alamat': case 'telepon': case 'email': case 'wa': case 'maps_embed':
+        case 'alamat': case 'telepon': case 'email': case 'wa':
             return db_exec('INSERT INTO kontak_sekolah (id, ' . $k . ') VALUES (1, ?) ON DUPLICATE KEY UPDATE ' . $k . ' = VALUES(' . $k . ')', 's', [$v]);
         case 'instagram': case 'facebook': case 'youtube': case 'tiktok':
             return db_exec('INSERT INTO media_sosial (platform, url) VALUES (?, ?) ON DUPLICATE KEY UPDATE url = VALUES(url)', 'ss', [$k, $v]);
@@ -157,7 +157,7 @@ function status_badge($s) {
 function max_upload_bytes() {
     $p = db_one("SHOW VARIABLES LIKE 'max_allowed_packet'");
     $pk = $p ? (int)$p['Value'] : 1048576;
-    return max(100000, min(2 * 1024 * 1024, $pk - 65536));
+    return max(100000, min(16 * 1024 * 1024, $pk - 65536));
 }
 // Mengembalikan [pesan_error|null, nama, tipe, data]
 function baca_upload($field, $diizinkan) {
@@ -218,7 +218,42 @@ function simpan_pendaftar($id, $akun_id, $in, $status = 'Draft', $sumber = 'Onli
     return (int)$id;
 }
 function simpan_berkas($id, $nama, $tipe, $data) {
-    return db_exec('INSERT INTO berkas_pendaftar (pendaftar_id, nama_berkas, tipe_berkas, data_berkas) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE nama_berkas=VALUES(nama_berkas), tipe_berkas=VALUES(tipe_berkas), data_berkas=VALUES(data_berkas)', 'isss', [(int)$id, $nama, $tipe, $data]);
+    return db_exec('INSERT INTO berkas_pendaftar (pendaftar_id, nama_berkas, tipe_berkas, data_berkas) VALUES (?,?,?,?)', 'isss', [(int)$id, $nama, $tipe, $data]);
+}
+const MAKS_BERKAS = 10;
+// Daftar semua berkas milik satu pendaftar (tanpa isi berkas).
+function daftar_berkas($pid) {
+    return db_all('SELECT id, nama_berkas, tipe_berkas, diunggah FROM berkas_pendaftar WHERE pendaftar_id=? ORDER BY id', 'i', [(int)$pid]);
+}
+function jumlah_berkas($pid) {
+    $r = db_one('SELECT COUNT(*) AS n FROM berkas_pendaftar WHERE pendaftar_id=?', 'i', [(int)$pid]);
+    return $r ? (int)$r['n'] : 0;
+}
+// Hapus satu berkas, hanya jika milik pendaftar tersebut.
+function hapus_berkas_id($berkas_id, $pid) {
+    return db_exec('DELETE FROM berkas_pendaftar WHERE id=? AND pendaftar_id=?', 'ii', [(int)$berkas_id, (int)$pid]);
+}
+// Hapus pendaftar beserta data siswa, wali, berkas, dan riwayat status (ON DELETE CASCADE).
+function hapus_pendaftar($pid) {
+    return db_exec('DELETE FROM pendaftar WHERE id=?', 'i', [(int)$pid]);
+}
+// Unggah banyak berkas dari input name="field[]". Mengembalikan [daftar_error, daftar_berkas[nama,tipe,data]]
+function baca_upload_multi($field, $diizinkan) {
+    $err = []; $hasil = [];
+    if (empty($_FILES[$field]) || !is_array($_FILES[$field]['name'])) return [$err, $hasil];
+    $maks = max_upload_bytes();
+    $fi = new finfo(FILEINFO_MIME_TYPE);
+    foreach ($_FILES[$field]['name'] as $i => $nm) {
+        $er = $_FILES[$field]['error'][$i];
+        if ($er === UPLOAD_ERR_NO_FILE) continue;
+        $label = mb_substr(basename((string)$nm), 0, 255);
+        if ($er !== UPLOAD_ERR_OK) { $err[] = 'Unggah "' . $label . '" gagal (kode ' . $er . '). Periksa batas upload_max_filesize dan post_max_size pada php.ini.'; continue; }
+        if ($_FILES[$field]['size'][$i] > $maks) { $err[] = 'Ukuran "' . $label . '" melebihi ' . round($maks / 1048576, 1) . ' MB.'; continue; }
+        $mime = $fi->file($_FILES[$field]['tmp_name'][$i]);
+        if (!in_array($mime, $diizinkan, true)) { $err[] = 'Format "' . $label . '" tidak diizinkan (hanya PDF/JPG/PNG).'; continue; }
+        $hasil[] = [$label, $mime, file_get_contents($_FILES[$field]['tmp_name'][$i])];
+    }
+    return [$err, $hasil];
 }
 function beri_nomor($id) {
     $no = 'GM27-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
@@ -306,7 +341,7 @@ function html_foot($js = '') { ?>
     </div>
   </div>
 </div>
-<script src="assets/js/script.js"></script>
+<script src="assets/js/script.js?v=<?= (int)@filemtime(__DIR__ . '/../assets/js/script.js') ?>"></script>
 <?= $js ?>
 </body>
 </html>

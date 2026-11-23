@@ -7,6 +7,16 @@ $errors = []; $buka_manual = false; $in = null;
 if (isset($_GET['aksi'], $_GET['id'])) {
     csrf_check($_GET['t'] ?? '');
     $peta = ['terima' => 'Diterima', 'tolak' => 'Ditolak', 'pending' => 'Pending'];
+    if ($_GET['aksi'] === 'hapus') {
+        $hid = (int)$_GET['id'];
+        $x = db_one('SELECT p.no_pendaftaran, s.nama_lengkap FROM pendaftar p LEFT JOIN data_siswa s ON s.pendaftar_id=p.id WHERE p.id=?', 'i', [$hid]);
+        if ($x) {
+            hapus_pendaftar($hid);
+            catat_log('hapus_pendaftar', '#' . $hid . ' ' . ($x['no_pendaftaran'] ?? '-') . ' ' . ($x['nama_lengkap'] ?? ''));
+            flash('ok', 'Pendaftar berhasil dihapus beserta seluruh berkasnya.');
+        } else flash('error', 'Pendaftar tidak ditemukan.');
+        redirect('admin_dashboard.php');
+    }
     if (isset($peta[$_GET['aksi']])) {
         $lama = db_one('SELECT status FROM pendaftar WHERE id=?', 'i', [(int)$_GET['id']]);
         if ($lama && $lama['status'] !== 'Draft' && $lama['status'] !== $peta[$_GET['aksi']]) {
@@ -36,13 +46,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $in = kumpul_input();
         $errors = validasi_pendaftar($in, true);
         if (nik_terdaftar($in['nik_nisn'])) $errors[] = 'NIK/NISN ini sudah terdaftar.';
-        list($uerr, $unama, $utipe, $udata) = baca_upload('berkas', ['application/pdf', 'image/jpeg', 'image/png']);
+        list($uerrs, $ufiles) = baca_upload_multi('berkas', ['application/pdf', 'image/jpeg', 'image/png']);
+        $uerr = $uerrs ? implode(' ', $uerrs) : null;
         if ($uerr) $errors[] = $uerr;
         if (!$errors) {
             $id = simpan_pendaftar(0, null, $in, 'Pending', 'Offline');
             if ($id > 0) {
                 beri_nomor($id);
-                if ($udata !== null) simpan_berkas($id, $unama, $utipe, $udata);
+                foreach ($ufiles as $uf) simpan_berkas($id, $uf[0], $uf[1], $uf[2]);
                 flash('ok', 'Pendaftar offline berhasil ditambahkan.'); redirect('admin_dashboard.php');
             }
             $errors[] = 'Gagal menyimpan data.';
@@ -105,7 +116,7 @@ html_head('Dashboard Admin');
             $det = ['id' => (int)$r['id'], 'no_pendaftaran' => $r['no_pendaftaran'], 'nik_nisn' => $r['nik_nisn'], 'nama_lengkap' => $r['nama_lengkap'], 'jenis_kelamin' => $r['jenis_kelamin'],
                 'tempat_lahir' => $r['tempat_lahir'], 'tgl_lahir' => tgl_indo($r['tanggal_lahir']), 'alamat' => $r['alamat'], 'asal_sekolah' => $r['asal_sekolah'], 'jalur' => $r['jalur'],
                 'tipe_batih' => $r['tipe_batih'], 'nama_batih' => $r['nama_batih'], 'pekerjaan_batih' => $r['pekerjaan_batih'], 'kontak_batih' => $r['kontak_batih'],
-                'nama_berkas' => $r['nama_berkas'], 'sumber' => $r['sumber'], 'waktu' => tgl_indo($r['waktu_daftar'], true), 'status' => $r['status']];
+                'nama_berkas' => $r['nama_berkas'], 'berkas' => array_map(function ($bf) { return ['id' => (int)$bf['id'], 'nama' => $bf['nama_berkas']]; }, daftar_berkas((int)$r['id'])), 'sumber' => $r['sumber'], 'waktu' => tgl_indo($r['waktu_daftar'], true), 'status' => $r['status']];
             $cari = mb_strtolower($r['nama_lengkap'] . ' ' . $r['nik_nisn'] . ' ' . $r['no_pendaftaran'] . ' ' . $r['kontak_batih'] . ' ' . $r['jalur']); ?>
           <tr data-status="<?= e($r['status']) ?>" data-cari="<?= e($cari) ?>" data-detail="<?= e(json_encode($det, JSON_UNESCAPED_UNICODE)) ?>" class="border-b border-gray-100 dark:border-gray-700 hover:bg-orange-50/60 dark:hover:bg-gray-700/40">
             <td class="p-3 font-semibold"><?= e($r['no_pendaftaran']) ?></td>
@@ -115,6 +126,7 @@ html_head('Dashboard Admin');
               <button type="button" onclick="bukaDetail(this.closest('tr'))" class="btn btn-ghost btn-sm" title="Detail"><i class="fa-solid fa-eye"></i></button>
               <a href="admin_dashboard.php?aksi=terima&id=<?= (int)$r['id'] ?>&t=<?= e(csrf_token()) ?>" class="btn btn-green btn-sm">Terima</a>
               <a href="admin_dashboard.php?aksi=tolak&id=<?= (int)$r['id'] ?>&t=<?= e(csrf_token()) ?>" data-confirm="Yakin menolak pendaftaran <?= e($r['nama_lengkap']) ?>?" class="btn btn-red btn-sm">Tolak</a>
+              <a href="admin_dashboard.php?aksi=hapus&id=<?= (int)$r['id'] ?>&t=<?= e(csrf_token()) ?>" data-confirm="HAPUS PERMANEN pendaftar <?= e($r['nama_lengkap']) ?> (<?= e($r['no_pendaftaran']) ?>) beserta seluruh berkasnya? Tindakan ini tidak dapat dibatalkan." class="btn btn-ghost btn-sm" title="Hapus pendaftar (mis. daftar ganda)"><i class="fa-solid fa-trash text-red-600"></i></a>
             </td>
           </tr>
         <?php endforeach; ?>
@@ -135,6 +147,7 @@ html_head('Dashboard Admin');
     <a id="d-terima" href="#" class="btn btn-green btn-sm"><i class="fa-solid fa-check"></i> Terima (Verifikasi)</a>
     <a id="d-pending" href="#" class="btn btn-ghost btn-sm"><i class="fa-solid fa-rotate-left"></i> Kembalikan ke Pending</a>
     <a id="d-tolak" href="#" data-confirm="" class="btn btn-red btn-sm"><i class="fa-solid fa-xmark"></i> Tolak</a>
+    <a id="d-hapus" href="#" data-confirm="" class="btn btn-ghost btn-sm"><i class="fa-solid fa-trash text-red-600"></i> Hapus Pendaftar</a>
   </div>
 </div></div>
 
@@ -156,7 +169,7 @@ html_head('Dashboard Admin');
     <div><label class="lbl">Nama orang tua/wali</label><input class="inp" name="nama_batih" value="<?= e($d['nama_batih']) ?>" required></div>
     <div><label class="lbl">Pekerjaan</label><input class="inp" name="pekerjaan_batih" value="<?= e($d['pekerjaan_batih']) ?>" required></div>
     <div><label class="lbl">Kontak</label><input class="inp" name="kontak_batih" value="<?= e($d['kontak_batih']) ?>" required></div>
-    <div class="sm:col-span-2"><label class="lbl">Berkas (opsional, PDF/JPG/PNG)</label><input class="inp" type="file" name="berkas" accept=".pdf,.jpg,.jpeg,.png"></div>
+    <div class="sm:col-span-2"><label class="lbl">Berkas (opsional, PDF/JPG/PNG)</label><input class="inp" type="file" name="berkas[]" multiple accept=".pdf,.jpg,.jpeg,.png"></div>
     <div class="sm:col-span-2"><button class="btn btn-or w-full"><i class="fa-solid fa-floppy-disk"></i> Simpan Pendaftar</button></div>
   </form>
 </div></div>

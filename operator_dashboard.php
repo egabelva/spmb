@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('ok', 'Konten dihapus.'); redirect('operator_dashboard.php' . (isset(TABEL_BAGIAN[$_POST['bagian'] ?? '']) ? '#m-' . $_POST['bagian'] : ''));
     }
     if ($aksi === 'simpan_kontak') {
-        foreach (['alamat', 'telepon', 'email', 'wa', 'maps_embed', 'instagram', 'facebook', 'youtube', 'tiktok'] as $k) set_setting($k, trim($_POST[$k] ?? ''));
+        foreach (['alamat', 'telepon', 'email', 'wa', 'instagram', 'facebook', 'youtube', 'tiktok'] as $k) set_setting($k, trim($_POST[$k] ?? ''));
         set_setting('siswa_aktif', (string)max(0, (int)($_POST['siswa_aktif'] ?? 0)));
         flash('ok', 'Kontak & identitas sekolah disimpan.'); redirect('operator_dashboard.php?tab=pengaturan');
     }
@@ -105,7 +105,7 @@ html_head('Dashboard Operator', 'bg-tebu min-h-screen');
       <div><label class="lbl">Judul / Nama</label><input class="inp" name="judul" maxlength="200"></div>
       <div><label class="lbl">Isi / Deskripsi</label><textarea class="inp" name="isi" rows="4"></textarea></div>
       <div><label class="lbl">Tautan (opsional)</label><input class="inp" name="tautan" maxlength="255" placeholder="https://..."></div>
-      <div><label class="lbl">Foto (JPG/PNG/WEBP, maks. <?= round(max_upload_bytes() / 1048576, 1) ?> MB)</label><input class="inp" type="file" name="gambar" accept="image/*"></div>
+      <div id="konten-foto"><label class="lbl">Foto (JPG/PNG/WEBP, maks. <?= round(max_upload_bytes() / 1048576, 1) ?> MB)</label><input class="inp" type="file" name="gambar" accept="image/*"></div>
       <label id="konten-hapusgbr" class="hidden flex items-center gap-2 text-sm ml-2"><input type="checkbox" name="hapus_gambar" class="accent-orange-500"> Hapus foto yang ada</label>
       <div><label class="lbl">Urutan tampil (angka kecil tampil lebih dulu)</label><input class="inp" type="number" name="urutan" value="0"></div>
       <div class="flex gap-2 pt-2"><button class="btn btn-or flex-1"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>
@@ -128,7 +128,6 @@ html_head('Dashboard Operator', 'bg-tebu min-h-screen');
         <div><label class="lbl">Email</label><input class="inp" name="email" value="<?= $f('email') ?>"></div>
         <div><label class="lbl">WhatsApp Customer Service (628xxx)</label><input class="inp" name="wa" value="<?= $f('wa') ?>"></div>
         <div><label class="lbl">Jumlah siswa aktif</label><input class="inp" type="number" min="0" name="siswa_aktif" value="<?= $f('siswa_aktif') ?>"></div>
-        <div class="sm:col-span-2"><label class="lbl">Tautan peta (URL embed Google Maps)</label><input class="inp" name="maps_embed" value="<?= $f('maps_embed') ?>" placeholder="https://www.google.com/maps?q=...&output=embed"></div>
         <div><label class="lbl">Instagram (URL)</label><input class="inp" name="instagram" value="<?= $f('instagram') ?>"></div>
         <div><label class="lbl">Facebook (URL)</label><input class="inp" name="facebook" value="<?= $f('facebook') ?>"></div>
         <div><label class="lbl">YouTube (URL)</label><input class="inp" name="youtube" value="<?= $f('youtube') ?>"></div>

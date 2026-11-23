@@ -106,12 +106,14 @@ CREATE TABLE orang_tua_wali (
 ) ENGINE=InnoDB;
 
 CREATE TABLE berkas_pendaftar (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   pendaftar_id INT UNSIGNED NOT NULL,
   nama_berkas VARCHAR(255) NOT NULL,
   tipe_berkas VARCHAR(100) NOT NULL,
   data_berkas LONGBLOB NOT NULL,
   diunggah TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (pendaftar_id),
+  PRIMARY KEY (id),
+  KEY idx_berkas_pendaftar (pendaftar_id),
   CONSTRAINT fk_berkas_pendaftar FOREIGN KEY (pendaftar_id) REFERENCES pendaftar (id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -146,7 +148,6 @@ CREATE TABLE kontak_sekolah (
   telepon VARCHAR(50) NOT NULL DEFAULT '',
   email VARCHAR(100) NOT NULL DEFAULT '',
   wa VARCHAR(25) NOT NULL DEFAULT '',
-  maps_embed VARCHAR(1000) NOT NULL DEFAULT '',
   diubah TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB;
@@ -188,11 +189,9 @@ CREATE TABLE organisasi LIKE banner;
 CREATE TABLE guru LIKE banner;
 CREATE TABLE galeri LIKE banner;
 CREATE TABLE agenda LIKE banner;
-CREATE TABLE berita LIKE banner;
 CREATE TABLE jadwal_ppdb LIKE banner;
 CREATE TABLE syarat_pendaftaran LIKE banner;
 CREATE TABLE biaya_pendaftaran LIKE banner;
-CREATE TABLE faq LIKE banner;
 
 -- ============================================================
 -- E. VIEW: gabungan data pendaftar (tanpa kolom berkas) agar mudah dibaca
@@ -205,13 +204,13 @@ SELECT p.id, p.akun_id, p.no_pendaftaran,
   COALESCE(j.nama,'') AS jalur,
   COALESCE(o.tipe,'') AS tipe_batih, COALESCE(o.nama,'') AS nama_batih,
   COALESCE(o.pekerjaan,'') AS pekerjaan_batih, COALESCE(o.kontak,'') AS kontak_batih,
-  COALESCE(b.nama_berkas,'') AS nama_berkas, COALESCE(b.tipe_berkas,'') AS tipe_berkas,
+  COALESCE((SELECT GROUP_CONCAT(b.nama_berkas ORDER BY b.id SEPARATOR ', ') FROM berkas_pendaftar b WHERE b.pendaftar_id = p.id),'') AS nama_berkas,
+  COALESCE((SELECT b2.tipe_berkas FROM berkas_pendaftar b2 WHERE b2.pendaftar_id = p.id ORDER BY b2.id LIMIT 1),'') AS tipe_berkas,
   p.status, p.sumber, p.waktu_daftar
 FROM pendaftar p
 LEFT JOIN data_siswa s ON s.pendaftar_id = p.id
 LEFT JOIN orang_tua_wali o ON o.pendaftar_id = p.id
-LEFT JOIN jalur_pendaftaran j ON j.id = p.jalur_id
-LEFT JOIN berkas_pendaftar b ON b.pendaftar_id = p.id;
+LEFT JOIN jalur_pendaftaran j ON j.id = p.jalur_id;
 
 -- ============================================================
 -- F. DATA AWAL (contoh - ubah lewat Dashboard Operator / Admin)
@@ -220,7 +219,7 @@ INSERT INTO kode_akses (peran, kode) VALUES ('Admin','SMAGM'), ('Operator','OPER
 INSERT INTO media_sosial (platform, url) VALUES ('instagram',''), ('facebook',''), ('youtube',''), ('tiktok','');
 INSERT INTO jalur_pendaftaran (nama, urutan, aktif) VALUES ('Domisili',1,1), ('Afirmasi',2,1), ('Prestasi',3,1), ('Perpindahan Tugas Orang Tua',4,1);
 INSERT INTO pengaturan_ppdb (id, kuota, deadline, hasil_diumumkan, siswa_aktif) VALUES (1, 180, '2027-06-30 23:59:00', 0, 0);
-INSERT INTO kontak_sekolah (id, alamat, telepon, email, wa, maps_embed) VALUES (1, 'Alamat sekolah (contoh - ubah lewat Dashboard Operator)', '0721-000000', 'info@smagunungmadu.example', '', '');
+INSERT INTO kontak_sekolah (id, alamat, telepon, email, wa) VALUES (1, 'Alamat sekolah (contoh - ubah lewat Dashboard Operator)', '0721-000000', 'info@smagunungmadu.example', '');
 
 INSERT INTO banner (judul, isi, urutan) VALUES ('Penerimaan Murid Baru SMA Gunung Madu 2027', 'Daftarkan dirimu secara online dan jadilah bagian dari keluarga besar kami.', 1);
 INSERT INTO profil_sekolah (judul, isi, urutan) VALUES ('', 'SMA Gunung Madu adalah sekolah menengah atas yang berkomitmen mencetak lulusan yang cerdas, hebat, dan bermartabat. (Teks contoh - ubah lewat Dashboard Operator.)', 1);
@@ -235,8 +234,6 @@ INSERT INTO organisasi (judul, isi, urutan) VALUES ('OSIS', 'Organisasi Siswa In
 INSERT INTO guru (judul, isi, urutan) VALUES ('Nama Guru 1 (contoh)', 'Mata pelajaran / jabatan', 1), ('Nama Guru 2 (contoh)', 'Mata pelajaran / jabatan', 2);
 INSERT INTO galeri (judul, isi, urutan) VALUES ('Kegiatan belajar (contoh)', '', 1), ('Kegiatan sekolah (contoh)', '', 2);
 INSERT INTO agenda (judul, isi, urutan) VALUES ('Masa Pengenalan Lingkungan Sekolah (MPLS)', 'Awal tahun pelajaran (contoh)', 1), ('Pekan Olahraga dan Seni', 'Setiap semester (contoh)', 2), ('Pelepasan Siswa Kelas XII', 'Akhir tahun pelajaran (contoh)', 3);
-INSERT INTO berita (judul, isi, urutan) VALUES ('Pendaftaran SPMB 2027 Dibuka', 'Pendaftaran peserta didik baru dilakukan secara online melalui website ini. (Berita contoh)', 1);
 INSERT INTO jadwal_ppdb (judul, isi, urutan) VALUES ('Pendaftaran online', 'Contoh: Mei - Juni 2027', 1), ('Verifikasi berkas', 'Contoh: Juni 2027', 2), ('Pengumuman hasil seleksi', 'Contoh: Juli 2027', 3), ('Daftar ulang', 'Contoh: Juli 2027', 4);
 INSERT INTO syarat_pendaftaran (judul, isi, urutan) VALUES ('Ijazah / Surat Keterangan Lulus (SKL)', '', 1), ('Kartu Keluarga', '', 2), ('Akta kelahiran', '', 3), ('Pas foto terbaru', '', 4);
 INSERT INTO biaya_pendaftaran (judul, isi, urutan) VALUES ('Biaya pendaftaran', 'Contoh: Gratis', 1), ('Biaya daftar ulang', 'Contoh: sesuai ketentuan sekolah', 2);
-INSERT INTO faq (judul, isi, urutan) VALUES ('Bagaimana cara mendaftar?', 'Buat akun di halaman Masuk, lengkapi formulir dan unggah dokumen, lalu kirim pendaftaran.', 1), ('Apakah data bisa diubah setelah dikirim?', 'Tidak. Pastikan seluruh data sudah benar sebelum menekan Kirim Pendaftaran. Anda dapat menyimpan draft terlebih dahulu.', 2), ('Kapan hasil seleksi diumumkan?', 'Hasil dapat dilihat di akun pendaftar setelah panitia mengumumkannya.', 3);
